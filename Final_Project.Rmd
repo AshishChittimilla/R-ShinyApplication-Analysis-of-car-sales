@@ -1,0 +1,242 @@
+---
+title: "Final Project"
+author: "Ashish Chittimilla"
+date: "5/3/2022"
+output: 
+   html_document:
+     code_folding: hide
+     df_print: paged
+     theme: "cerulean"
+     code_download: TRUE
+---
+# Analysis of Car sales{.tabset}
+
+## Abstract
+The primary purpose of using an ANOVA (Analysis of Variance) model is to determine whether differences in means exist across groups.
+While a t-test is capable of establishing if differences exist across two means - a more extensive test is necessary if several groups exist.
+In this example, we will take a look at how to implement an ANOVA model to analyse car sales data.
+
+## Introduction
+
+The analysis is conducted on a car sales dataset available at Kaggle.
+
+The purpose of this analysis is to determine whether factors such as engine size, horsepower, and fuel efficiency differ across groups of cars based on both vehicle type and country of origin.
+
+A one-way ANOVA is used to determine effects when using just one categorical variable.
+
+A two-way ANOVA is used to determine effects across multiple categories (also known as a factorial ANOVA) and also whether interaction effects are present,i.e. the combined effects of factors on the dependent variable as opposed to considering them in isolation.
+
+## Required Packages
+
+In order for the code in this document to run you must use the following packages: 
+
+* __`tidyverse`__ for data manipulation and visualization
+* __`ggpubr`__ for creating easily publication ready plot (ex. qqplots)
+* __`rstatix`__ which provides pip-friendly R functions for easy statistical analysis. 
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+library(tidyverse)
+library(ggpubr)
+library(rstatix)
+```
+
+## Data Preparation
+
+<div class="alert alert-info" role="alert">
+Here is an overview of the dataset:
+
+</div>
+
+```{r}
+library(readxl)
+carsales <- read_excel("Car_sales.xlsx", col_names = TRUE)
+carsales
+
+```
+
+Note that for the manufacturer column - 50 different categories (or factors) are provided in the dataset. In order to reduce the number of factors, a second factor called Country was added, whereby the manufacturers are grouped according to their country of origin. For instance, all cars manufactured by Audi and Volkswagen are classified as German, while all cars manufactured by Hyundai and Toyota are classified as Japanese,etc.
+
+## Data Analysis - Part 1
+
+One-way ANOVA
+
+As explained, the one-way ANOVA will be used in this case to determine whether significant differences in mena values exist across both vehicle type and country of manufacturer for the following variables:
+
+1. Power performance factor
+2. Engine size
+3. Horsepower
+4. Fuel capacity
+5. Fuel efficiency
+
+Let's run the ANOVAs and analyse the results.
+
+```{r}
+one.way <- aov(Power_perf_factor ~ Vehicle_type, data = carsales)
+summary(one.way)
+```
+
+```{r}
+one.way <- aov(Engine_size ~ Vehicle_type, data = carsales)
+summary(one.way)
+```
+
+```{r}
+one.way <- aov(Horsepower ~ Vehicle_type, data = carsales)
+summary(one.way)
+```
+
+```{r}
+one.way <- aov(Fuel_capacity ~ Vehicle_type, data = carsales)
+summary(one.way)
+```
+
+```{r}
+one.way <- aov(Fuel_efficiency ~ Vehicle_type, data = carsales)
+summary(one.way)
+```
+
+<div class="alert alert-success" role="alert">
+We can see that for vehicle type (which is specified as either Passenger or Car) in the dataset, the results are not significant for horsepower or power performance factor,i.e. the means of these variables do not show a statistically significant difference depending on whether the vehicle is classified as Passenger or Car.
+</div>
+
+
+Let's now take a look at whether the means of these variables differ across country.
+
+```{r}
+one.way <- aov(Power_perf_factor ~ Country, data = carsales)
+summary(one.way)
+```
+
+```{r}
+one.way <- aov(Engine_size ~ Country, data = carsales)
+summary(one.way)
+```
+
+```{r}
+one.way <- aov(Horsepower ~ Country, data = carsales)
+summary(one.way)
+```
+
+```{r}
+one.way <- aov(Fuel_capacity ~ Country, data = carsales)
+summary(one.way)
+```
+
+```{r}
+one.way <- aov(Fuel_efficiency ~ Country, data = carsales)
+summary(one.way)
+```
+
+<div class="alert alert-success" role="alert">
+We can see that the p-values for the F-statistic come back as insignificant for all but Engine size, meaning that there are statistically significant differences across the mean engine size depending on the country of manufacturer.
+</div>
+
+It is important to note that one limitation of using ANOVA is that the test will only indicate whether the mean differences across groups are statistically significant - they do not particularly reveal which group is responsible for the differences in means.
+
+For instance, we may observe that mean engine size is indicated to differ across countries — but ANOVA itself cannot tell us which country shows a larger mean engine size across manufacturers as compared to vehicles from other countries.
+
+## Data Analysis - Part 2
+
+Two-way ANOVA
+
+Moreover, a limitation of one-way ANOVA is that it cannot test for the effects of interactions. For instance, a vehicle type and manufacturing country may not affect the horsepower of a vehicle individually, but what about when the two factors are combined?
+
+In this regard, a two-way ANOVA is used to 
+
+1) test the effect of multiple factors on the dependent variable and 
+2) the effect of combining these factors, i.e. an interaction effect.
+
+Here are the four models that we will run (which include interaction effects):
+
+```{r}
+model_1 = lm(Engine_size ~ Vehicle_type + Country + 
+               Vehicle_type*Country, data = carsales)
+
+model_2 = lm(Fuel_efficiency ~ Vehicle_type + Country + 
+               Vehicle_type*Country, data = carsales)
+
+model_3 = lm(Fuel_capacity ~ Vehicle_type + Country + 
+               Vehicle_type*Country, data = carsales)
+
+model_4 = lm(Sales_in_thousands ~ Vehicle_type + Country + 
+               Vehicle_type*Country, data = carsales)
+```
+
+A two-way ANOVA test is run on each of the four models:
+
+```{r warning=FALSE, message=FALSE}
+library(car)
+Anova(model_1, type = "II")
+Anova(model_2, type = "II")
+Anova(model_3, type = "II")
+Anova(model_4, type = "II")
+```
+
+Here are the results:
+
+```{r}
+Anova(model_1, type = "II")
+```
+
+```{r}
+Anova(model_2, type = "II")
+```
+
+```{r}
+Anova(model_3, type = "II")
+```
+
+```{r}
+Anova(model_4, type = "II")
+```
+
+<div class="alert alert-success" role="alert">
+We can see that for model 4, the interaction between vehicle type and country is statistically significant.
+
+This indicates that the sales value is significantly influenced by both vehicle type and the country of the manufacturer. Moreover, the two variables also interact with each other.
+
+</div>
+
+As a hypothetical example, we might find that vehicle sales across Japan are higher across passenger vehicles, but sales across Germany are lower across passenger vehicles. In other words, we cannot simply conclude that the relationship between vehicle type and sales will remain the same across countries — the presence of an interaction indicates that they might differ.
+
+Using the sjPlot library, we can take a further look at interaction effects.
+
+```{r}
+library(sjPlot)
+plot_model(model_4, type = "pred", terms = c("Vehicle_type", "Country"))
+
+```
+
+<div class="alert alert-success" role="alert">
+We can see that the range of sales values differ considerably across vehicle type. For instance, the range of sales for cars in Germany has a much wider range than that of passenger vehicles.
+
+Similarly, Japan is indicated to have a higher median sales price across passenger vehicles as opposed to cars.
+</div>
+
+
+## Conclusion
+
+To conclude, we have seen how one-way and two-way ANOVA can be used to analyse differences across means — in this case, using a car sales dataset.
+
+We have also taken a look at:
+
+1. The limitations of using ANOVA
+
+2. How a two-way ANOVA can be used to examine interaction effects between variables
+
+3. The use of the sjPlot library in visually examining interaction effects
+
+
+## Personal Information
+
+<center>
+![](IMG_3243.jpg){width=20%} 
+</center>
+
+
+* **Name** : Ashish Chittimilla. 
+* **E-mail** achiti@clemson.edu
+* **Semester** : Spring 2022
+* **Degree** : MS in Computer Engineering
+
+
